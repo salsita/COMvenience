@@ -9,10 +9,10 @@
  * Classes in this file:
  *  template class DispatchConvenience
  *   Provides convenience functions for dealing with IDispatch interfaces.
- *   This template is used by ComIDispatchPtr and ComIDispatchExPtr.
+ *   This template is used by ComIDispatchPtr and ConvIDispatchExPtr.
  *  ComIDispatchPtr
  *   Derives from CComQIPtr<IDispatch> and implements DispatchConvenience.
- *  ComIDispatchExPtr
+ *  ConvIDispatchExPtr
  *   Derives from CComQIPtr<IDispatchEx> and implements DispatchConvenience for
  *   the IDispatch part.
  ******************************************************************************/
@@ -21,10 +21,12 @@
 
 #include <atlcomcli.h>
 #include <comvDispatchArgs.h>
+#include <_implementQIPtr.h>
 
 /*==============================================================================
  * namespace
  */
+
 namespace COMvenience
 {
 
@@ -241,56 +243,29 @@ public:
 };
 
 /*==============================================================================
- * class ComIDispatchPtr
+ * template<> class ConvDispPtr
  *
- * Adds some convenience methods to CComQIPtr<IDispatch> and makes dealing with
- * activescript easier.
+ * Basically a replacement for CCom(QI)Ptr, but only for dual interfaces.
+ * Derives also from DispatchConvenience to offer IDispatch related helpers.
  */
-class ComIDispatchPtr :
-  public CComQIPtr<IDispatch>, public DispatchConvenience<ComIDispatchPtr>
-{
+template<class T, const IID* piid = &__uuidof(T)> class ConvDispPtr :
+      public CComQIPtr<T>,
+      public DispatchConvenience<ConvDispPtr<T> > {
 public:
-  //----------------------------------------------------------------------------
-  // Methods overwritten from CComQIPtr<IDispatch>
-  ComIDispatchPtr() throw() :
-      CComQIPtr<IDispatch>() {}
-
-  ComIDispatchPtr(IDispatch* aDispPtr) throw() :
-      CComQIPtr<IDispatch>(aDispPtr) {}
-
-  ComIDispatchPtr(const CComQIPtr<IDispatch>& aSafePtr) throw() :
-      CComQIPtr<IDispatch>(aSafePtr) {}
-
-  IDispatch* operator=(IDispatch* aDispPtr) throw() {
-    return CComQIPtr<IDispatch>::operator =(aDispPtr);
-  }
-
+  IMPLEMENT_QI_PTR(ConvDispPtr, T)
 };
-
+typedef ConvDispPtr<IDispatch> ConvIDispatchPtr;
 
 /*==============================================================================
- * class ComIDispatchExPtr
+ * class ConvIDispatchExPtr
  *
  * The same like ComIDispatchPtr, but for the IDispatchEx interface
  */
-class ComIDispatchExPtr :
-  public CComQIPtr<IDispatchEx>, public DispatchConvenience<ComIDispatchExPtr>
-{
+template<> class ConvDispPtr<IDispatchEx> :
+      public CComQIPtr<IDispatchEx>,
+      public DispatchConvenience<ConvDispPtr<IDispatchEx> > {
 public:
-  //----------------------------------------------------------------------------
-  // Methods overwritten from CComQIPtr<IDispatchEx>
-  ComIDispatchExPtr() throw() :
-      CComQIPtr<IDispatchEx>() {}
-
-  ComIDispatchExPtr(IDispatch* aDispPtr) throw() :
-      CComQIPtr<IDispatchEx>(aDispPtr) {}
-
-  ComIDispatchExPtr(const CComQIPtr<IDispatchEx>& aSafePtr) throw() :
-      CComQIPtr<IDispatchEx>(aSafePtr) {}
-
-  IDispatch* operator=(IDispatch* aDispPtr) throw() {
-    return CComQIPtr<IDispatchEx>::operator =(aDispPtr);
-  }
+  IMPLEMENT_QI_PTR(ConvDispPtr, IDispatchEx)
 
   //----------------------------------------------------------------------------
   // Get an ex(pando) DISPID from a name
@@ -465,7 +440,7 @@ public:
       return E_INVALIDARG;
     }
 
-    ATLTRACE(atlTraceCOM, 2, _T("ComIDispatchExPtr::putExProperty\n"));
+    ATLTRACE(atlTraceCOM, 2, _T("ConvIDispatchExPtr::putExProperty\n"));
     DISPID dispidPut = DISPID_PROPERTYPUT;
     DISPPARAMS dispParams = {&aValue, &dispidPut, 1, 1};
 
@@ -494,7 +469,7 @@ public:
       return retVal;
     }
 
-    ATLTRACE(atlTraceCOM, 2, _T("ComIDispatchExPtr::getExProperty\n"));
+    ATLTRACE(atlTraceCOM, 2, _T("ConvIDispatchExPtr::getExProperty\n"));
     DISPPARAMS dispparamsNoArgs = {NULL, NULL, 0, 0};
     HRESULT hr = p->InvokeEx(aDispID, LOCALE_USER_DEFAULT,
         DISPATCH_PROPERTYGET, &dispparamsNoArgs, &retVal, NULL, NULL);
@@ -528,5 +503,9 @@ public:
   }
 
 };
+typedef ConvDispPtr<IDispatchEx> ConvIDispatchExPtr;
+
+// cleanup
+#undef IMPLEMENT_QI_PTR
 
 } // namespace COMvenience
