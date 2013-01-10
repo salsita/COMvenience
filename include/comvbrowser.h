@@ -1,4 +1,4 @@
-﻿/*******************************************************************************
+/*******************************************************************************
  * COMvenience : COM/ATL a bit more convenient
  * Copyright 2013 Salsita Software http://www.salsitasoft.com/
  * Author: Arne Seib <kontakt@seiberspace.de>
